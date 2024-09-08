@@ -41,7 +41,6 @@ void setup() {
 
   while (!Serial) {}
 
-  Serial.println("");
   Serial.println("Starting...");
 
   while (LOGI.request(VERSION) == 0) {
@@ -55,11 +54,14 @@ void setup() {
   LOGI.input(SELECT_INPUT_3);
   LOGI.cmd(MUTE_OFF);
 
+  Serial.println("");
   Serial.println("Z906 Version: " + (String)LOGI.request(VERSION));
   Serial.println("Main level: " + (String)LOGI.request(MAIN_LEVEL));
   Serial.println("Rear level: " + (String)LOGI.request(REAR_LEVEL));
   Serial.println("Center level: " + (String)LOGI.request(CENTER_LEVEL));
   Serial.println("Sub level: " + (String)LOGI.request(SUB_LEVEL));
+  Serial.println("Running: " + (String)!LOGI.request(STATUS_STBY));
+  Serial.println("");
 }
 
 void loop() {
@@ -92,6 +94,8 @@ void loop() {
   if (!digitalRead(PIN_BTN) && (now - buttonLastClickedTimeMs) > DEBOUNCE_DELAY_MS) {
     if (LOGI.request(STATUS_STBY)) {
       LOGI.on();
+      LOGI.input(SELECT_INPUT_3);
+      LOGI.cmd(MUTE_OFF);
       Serial.println("Power on");
     } else {
       LOGI.off();
