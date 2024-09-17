@@ -38,9 +38,6 @@ void setup() {
 
   Joystick.begin();
   Serial.begin(9600);
-
-  while (!Serial) {}
-
   Serial.println("Starting...");
 
   while (LOGI.request(VERSION) == 0) {
