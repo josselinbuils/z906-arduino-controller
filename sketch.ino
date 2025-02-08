@@ -1,4 +1,5 @@
 #include <Keyboard.h>
+#include <Joystick.h>
 #include "RotaryEncoder.h"
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiAvrI2c.h"
@@ -10,8 +11,17 @@ const int DEBOUNCE_DELAY_MS = 300;
 const int PIN_CLK = A2;
 const int PIN_DT = A3;
 const int PIN_BTN = A4;
+const int PIN_BUTTON_0 = 4;
+const int PIN_BUTTON_1 = 5;
+const int PIN_BUTTON_2 = 6;
+const int PIN_BUTTON_3 = 7;
+const int PIN_BUTTON_4 = 8;
+const int PIN_BUTTON_5 = 9;
+const int PIN_BUTTON_6 = 10;
+const int PIN_BUTTON_7 = 11;
 const uint8_t STATUS_STBY = 0x14;
 
+int lastButtonState[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 int lastDisplayedMainLevel = 0;
 int mainLevel = 0;
 int running = 0;
@@ -19,6 +29,7 @@ unsigned long buttonLastClickedTimeMs = 0;
 unsigned long lastEncoderCheckTimeMs = 0;
 unsigned long lastScreenRefreshTimeMs = 0;
 unsigned long lastStatusCheckTimeMs = 0;
+Joystick_ Joystick;
 RotaryEncoder encoder(PIN_DT, PIN_CLK);
 SSD1306AsciiAvrI2c oled;
 Z906 LOGI(Serial1);
@@ -27,7 +38,16 @@ void setup() {
   pinMode(PIN_BTN, INPUT_PULLUP);
   pinMode(PIN_CLK, INPUT_PULLUP);
   pinMode(PIN_DT, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_0, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_1, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_2, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_3, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_4, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_5, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_6, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_7, INPUT_PULLUP);
 
+  Joystick.begin();
   oled.begin(&Adafruit128x64, I2C_ADDRESS);
   oled.setFont(Adafruit5x7);
   Serial.begin(9600);
@@ -35,10 +55,7 @@ void setup() {
 
   while (LOGI.request(VERSION) == 0) {
     Serial.println("Waiting Z906 Power-Up");
-    //digitalWrite(PIN_LED, HIGH); TODO write on screen
-    delay(500);
-    //digitalWrite(PIN_LED, LOW); TODO write on screen
-    delay(500);
+    delay(1000);
   }
 
   LOGI.input(SELECT_INPUT_3);
@@ -61,8 +78,6 @@ void setup() {
 }
 
 void loop() {
-  encoder.tick();
-
   unsigned long now = millis();
 
   if ((now - lastStatusCheckTimeMs) > DEBOUNCE_DELAY_MS) {
@@ -91,9 +106,21 @@ void loop() {
     }
   }
 
+  for (int buttonIndex = 0; buttonIndex < 8; buttonIndex++) {
+    int currentButtonState = !digitalRead(PIN_BUTTON_0 + buttonIndex);
+
+    if (currentButtonState != lastButtonState[buttonIndex]) {
+      Serial.println((String)buttonIndex + " " + (String)lastButtonState[buttonIndex] + " " + (String)currentButtonState);
+      Joystick.setButton(buttonIndex, currentButtonState);
+      lastButtonState[buttonIndex] = currentButtonState;
+    }
+  }
+
   if (running == 0) {
     return;
   }
+
+  encoder.tick();
 
   if ((now - lastEncoderCheckTimeMs) > DEBOUNCE_DELAY_MS) {
     int deltaPos = encoder.getPosition();
